@@ -1,39 +1,68 @@
 const request = require('supertest');
 const app = require('../src/index');
+const db = require('../src/database/index');
 
-
-jest.mock('../src/domain/movieDomain', () => ({
-  getAllWinners: jest.fn()
-}));
 
 const { getAllWinners } = require('../src/domain/movieDomain');
 
-describe('GET /producerWithMaxMinGap', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+
+describe('GET /movies/producer', () => {
+  beforeEach(async() => {
+    await db.sync();
   });
 
-  it('responds with JSON containing intervalAwards', async () => {
+  
+  it('responds with content-type correct', (done) => {
 
-    getAllWinners.mockResolvedValue([
-      { producers: 'Producer1', year: 2020 },
-      { producers: 'Producer2', year: 2019 },
-      { producers: 'Producer1', year: 2018 }
-    ]);
-
-    const response = await request(app).get('/movies/producer');
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('intervalAwards');
+    request(app).get('/movies/producer')
+      .expect('Content-Type', 'application/json; charset=utf-8')
+      .expect(200, done);
   });
 
-  it('responds with 500 if an error occurs', async () => {
+
+  it('should have properties in JSON', async () => {
+
+    const res = await request(app).get('/movies/producer')
+
+    expect(res.body).toHaveProperty('intervalAwards');
+    expect(res.body.intervalAwards).toHaveProperty('max');
+    expect(res.body.intervalAwards).toHaveProperty('min');
+
+  });
+
+  it('check default value in property min', async () => {
+
+    const res = await request(app).get('/movies/producer')
+
+    const min = [
+      {
+        "producer":"Joel Silver",
+        "interval":1,
+        "previousWin":1990,
+        "followingWin":1991
+      }
+    ];
+    expect(res.body.intervalAwards.min).toEqual(min)
     
-    getAllWinners.mockRejectedValue(new Error('Database connection error'));
-
-    const response = await request(app).get('/movies/producer');
-    expect(response.status).toBe(500);
-    expect(response.body).toHaveProperty('error');
   });
+
+  it('check default value in property max', async () => {
+
+    const res = await request(app).get('/movies/producer')
+
+    const max = [
+      {
+        "producer":"Matthew Vaughn",
+        "interval":13,
+        "previousWin":2002,
+        "followingWin":2015
+      }
+    ];
+    expect(res.body.intervalAwards.max).toEqual(max)
+    
+  });
+
+  
 });
 
 
