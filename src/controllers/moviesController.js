@@ -57,7 +57,7 @@ const producersMinMax = (qtd, interval, producersAux) =>{
     
     filteredProds.push({
       producer: x.name,
-      interval: interval,
+      interval: x.numYears,
       previousWin: x.years[0],
       followingWin: x.years[1]
     });
